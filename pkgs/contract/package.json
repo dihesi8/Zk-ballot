@@ -1,0 +1,13 @@
+{
+  "name": "@zk-ballot/contract",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "compact": "compact compile src/ballot.compact managed/ballot",
+    "build": "npm run compact && tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "*",
+    "@midnight-ntwrk/compact-js": "2.5.1"
+  }
+}

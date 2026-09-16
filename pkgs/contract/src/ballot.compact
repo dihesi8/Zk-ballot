@@ -1,0 +1,145 @@
+// ballot.compact
+// ZK-Ballot: private DAO voting on Midnight.
+//
+// Execution contexts:
+//   WITNESS  — off-chain, local. Holds the voter's/admin's secret key.
+//              Never leaves the client.
+//   CIRCUIT  — local ZK engine. Proves eligibility + prevents double-voting
+//              without revealing which wallet cast which vote.
+//   LEDGER   — on-chain, public. Only ever sees: the eligible-voter
+//              commitment set, the used-nullifier set, and the tally.
+//
+// Design notes:
+//   - Eligibility is modeled as an admin-managed set of hashed voter
+//     commitments (derived off-chain from a governance-token snapshot).
+//     Live on-chain token-balance checks are out of scope for Wave 1.
+//   - The nullifier is deterministic: hash(secretKey, proposalId). This is
+//     intentional — it must produce the SAME value every time the same
+//     voter tries to vote on the same proposal, so a repeat attempt is
+//     caught. It reveals nothing about the voter because hashes are
+//     preimage-resistant.
+//   - Source for syntax: https://docs.midnight.network/compact/reference/*
+//     (compiler 0.34.0 docs, camelCase runtime API). If your local
+//     compactc 0.30.0 rejects anything here, the pragma line and the
+//     persistentHash<Vector<N,...>> calls are the most likely culprits —
+//     paste the compiler error back and we'll adjust.
+
+pragma language_version >= 0.16;
+
+import CompactStandardLibrary;
+
+// -------------------------------------------------------------------------
+// Public ledger state
+// -------------------------------------------------------------------------
+
+export ledger proposalId: Bytes<32>;
+export ledger admin: Bytes<32>;
+
+// Hashed commitments of wallets eligible to vote (governance-token
+// snapshot, added by admin before/at voting start).
+export ledger eligibleVoters: Set<Bytes<32>>;
+
+// Prevents double-voting. Public, but unlinkable to any specific wallet.
+export ledger usedNullifiers: Set<Bytes<32>>;
+
+export ledger tallyOptionA: Counter;
+export ledger tallyOptionB: Counter;
+
+// -------------------------------------------------------------------------
+// Witnesses — implemented in TypeScript on the client, not here
+// -------------------------------------------------------------------------
+
+witness adminSecretKey(): Bytes<32>;
+witness voterSecretKey(): Bytes<32>;
+
+// -------------------------------------------------------------------------
+// Constructor
+// -------------------------------------------------------------------------
+
+constructor(id: Bytes<32>, adminPk: Bytes<32>) {
+  proposalId = disclose(id);
+  admin = disclose(adminPk);
+}
+
+// -------------------------------------------------------------------------
+// addEligibleVoter — admin-only. Registers a hashed voter commitment.
+// -------------------------------------------------------------------------
+
+export circuit addEligibleVoter(voterCommitment: Bytes<32>): [] {
+  const sk = adminSecretKey();
+  const pk = persistentHash<Vector<2, Bytes<32>>>(
+    [pad(32, "zk-ballot:admin:v1"), sk]
+  );
+  assert(pk == admin, "only admin can add eligible voters");
+
+  // voterCommitment is a circuit parameter, but Compact treats ALL
+  // constructor/circuit parameters as private proof inputs by default —
+  // writing one to the ledger always needs an explicit disclose().
+  eligibleVoters.insert(disclose(voterCommitment));
+}
+
+// -------------------------------------------------------------------------
+// castVote — the core circuit.
+//   1. Derive this voter's commitment from their secret key.
+//   2. Check it's in the eligible set.
+//   3. Derive a deterministic nullifier and check it hasn't been used.
+//   4. Record the nullifier (marks this voter as having voted).
+//   5. Increment the public tally for the chosen option.
+// -------------------------------------------------------------------------
+
+export circuit castVote(voteChoice: Uint<8>): [] {
+  assert(voteChoice == 0 || voteChoice == 1, "invalid vote choice");
+
+  const sk = voterSecretKey();
+
+  const voterCommitment = persistentHash<Vector<2, Bytes<32>>>(
+    [pad(32, "zk-ballot:voter:v1"), sk]
+  );
+  const nullifier = persistentHash<Vector<3, Bytes<32>>>(
+    [pad(32, "zk-ballot:nullifier:v1"), sk, proposalId]
+  );
+
+  // Both values are derived from witness data (sk) and are being passed
+  // as arguments to ledger operations, so they must be explicitly
+  // disclosed. This reveals the hash, not the secret key itself.
+  const revealedCommitment = disclose(voterCommitment);
+  const revealedNullifier = disclose(nullifier);
+
+  assert(
+    eligibleVoters.member(revealedCommitment),
+    "not eligible: no governance token commitment found"
+  );
+  assert(
+    !usedNullifiers.member(revealedNullifier),
+    "already voted on this proposal"
+  );
+
+  usedNullifiers.insert(revealedNullifier);
+
+  // Which option was chosen becomes public the moment we decide which
+  // tally counter to increment — that's inherent to a public tally.
+  // The nullifier/commitment separation is what keeps the *voter*
+  // unlinkable, not the choice itself. Disclose it explicitly here.
+  const revealedChoice = disclose(voteChoice);
+
+  if (revealedChoice == 0) {
+    tallyOptionA.increment(1);
+  } else {
+    tallyOptionB.increment(1);
+  }
+}
+
+// -------------------------------------------------------------------------
+// getTally — read-only, public ledger state, no proof needed to call.
+// -------------------------------------------------------------------------
+
+export circuit getTally(): Vector<2, Uint<64>> {
+  return [tallyOptionA.read(), tallyOptionB.read()];
+}
+
+// TODO (next iteration):
+//   - malformed-proof / wallet-disconnect handling lives in the TS layer
+//     (pkgs/cli, pkgs/app), not the contract — contracts fail closed by
+//     default since an incomplete proof simply can't be generated.
+//   - Wave 2: multi-proposal support (proposalId becomes a Map key instead
+//     of a single Cell), selective-disclosure audit circuit.

@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(47, 169, 184, 0.08), transparent),
+      #0A0E16;
+    background-attachment: fixed;
+  }
+  ::selection {
+    background-color: #2FA9B8;
+    color: #0A0E16;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0A0E16;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #232B3D;
+    border-radius: 6px;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-panel/60 backdrop-blur-sm border border-border rounded-lg;
+  }
+  .glass-input {
+    @apply bg-surface/80 border border-border rounded-md px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-cyan/50 focus:border-cyan/50 transition-colors;
+  }
+  .btn-primary {
+    @apply bg-cyan hover:bg-cyan-bright text-void font-medium rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-cyan;
+  }
+  .btn-secondary {
+    @apply bg-transparent border border-border hover:border-cyan-dim text-ink hover:text-cyan-bright font-medium rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-ink;
+  }
+  .pill {
+    @apply text-xs font-medium px-2.5 py-1 rounded-full border;
+  }
+}

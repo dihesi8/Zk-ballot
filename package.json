@@ -1,0 +1,17 @@
+{
+  "name": "zk-ballot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Private DAO voting on Midnight — eligibility + nullifier proofs with a public tally.",
+  "workspaces": [
+    "pkgs/core",
+    "pkgs/contract",
+    "pkgs/app"
+  ],
+  "scripts": {
+    "contract": "npm run build --workspace=pkgs/contract",
+    "build": "npm run build --workspace=pkgs/core && npm run build --workspace=pkgs/contract && npm run build --workspace=pkgs/app",
+    "dev:app": "npm run dev --workspace=pkgs/app"
+  },
+  "license": "Apache-2.0"
+}

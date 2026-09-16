@@ -1,0 +1,9 @@
+node_modules/
+dist/
+managed/
+.next/
+pkgs/cli/logs/
+*.log
+.env
+.env.local
+.DS_Store

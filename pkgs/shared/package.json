@@ -1,0 +1,21 @@
+{
+  "name": "@zk-ballot/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@zk-ballot/core": "*",
+    "@zk-ballot/contract": "*",
+    "@midnight-ntwrk/midnight-js-types": "*",
+    "@midnight-ntwrk/midnight-js-contracts": "*",
+    "@midnight-ntwrk/midnight-js-protocol": "*",
+    "@midnight-ntwrk/midnight-js-utils": "*",
+    "rxjs": "^7.8.0",
+    "pino": "^10.0.0"
+  }
+}
