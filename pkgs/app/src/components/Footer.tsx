@@ -10,16 +10,16 @@ export function Footer() {
             </span>
           </div>
           <nav className="flex items-center gap-6 text-sm text-ink-dim">
-            <a href="#" className="hover:text-ink transition-colors">
-              Privacy
+            <a href="https://youtu.be/uj-UtCp_Qzo?si=1Tvi5RWSJWaJBtB7" className="hover:text-ink transition-colors">
+              Demo
             </a>
             <a href="#" className="hover:text-ink transition-colors">
               Terms
             </a>
-            <a href="#" className="hover:text-ink transition-colors">
+            <a href="https://github.com/dihesi8/Zk-ballot" className="hover:text-ink transition-colors">
               GitHub
             </a>
-            <a href="#" className="hover:text-ink transition-colors">
+            <a href="https://app.akindo.io/communities/JBaRxLeW2iWAm2l6q/products/nPmqnnnqjfwKLmq6" className="hover:text-ink transition-colors">
               Buildathon submission
             </a>
           </nav>
