@@ -212,5 +212,4 @@ deploy with `npm run preprod` from inside `pkgs/cli`.
 
 Apache 2.0, see [LICENSE](./LICENSE). Submitted under the `midnightntwrk`
 tag per Buildathon open-source requirements.
-#   Z k - b a l l o t  
- # Zk-ballot
+#
